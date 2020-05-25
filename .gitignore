@@ -1,5 +1,5 @@
 .Rhistory
 .Rproj.user
 renv/library
-renv/python/
-renv/staging/
+renv/python
+renv/staging
