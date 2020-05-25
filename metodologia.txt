@@ -1,0 +1,18 @@
+feature engineering:
+- TP_ANO_CONCLUIU => quantidade de anos passados que o candidato terminou EM (2016 - TP_ANO_CONCLUIU)
+- transformar em quantitativa:
+    - Q005
+    - Q008:Q017
+    - Q019
+    - Q022
+    - Q024
+    - Q027
+- Categorizar: Q029:Q041
+
+models:
+- xgboost
+- lasso
+- random forest
+- ensemble model
+
+baseline MSE: 0.0205
