@@ -26,7 +26,7 @@ plot_missing(train, missing_only = T)
 useless_vars <- c("SG_UF_RESIDENCIA", "NU_INSCRICAO")
 
 train <- train %>%
-  select(-all_of(isuless_vars))
+  select(-all_of(useless_vars))
 
 # Distribution of NU_NOTA_MT ----
 ggplot(aes(x = NU_NOTA_MT), data = train) +
