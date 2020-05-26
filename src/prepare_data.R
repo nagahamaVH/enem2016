@@ -5,8 +5,6 @@ library(caret)
 library(arules)
 source("./src/utils.R", encoding = "UTF-8")
 
-SEED <- 5062
-
 train <- read_csv("./data/train.csv", col_types = cols())
 
 train_col_types <- spec(train)
@@ -24,12 +22,11 @@ useless_vars <- c("SG_UF_RESIDENCIA", "NU_INSCRICAO", "Q026", "TP_PRESENCA_LC",
 
 char_var <- c("Q001", "Q002", "Q006", "Q024", "Q025", "Q026", "Q027", "Q047")
 
-bc <- BoxCoxTrans(train$NU_NOTA_MT)
-
 train <- train %>%
   filter(NU_NOTA_MT > 0 & !is.na(NU_NOTA_MT)) %>%
-  filter(NU_NOTA_CH > 0 | NU_NOTA_CN > 0) %>%
-  mutate(NU_NOTA_MT_BC = predict(bc, NU_NOTA_MT)) %>%
+  filter(NU_NOTA_CH > 0 | NU_NOTA_CN > 0) # outliers
+
+train <- train %>%
   mutate_at(vars(starts_with("IN")), as.character) %>%
   mutate_at(vars(starts_with("TP")), as.character) %>%
   mutate_at(vars(starts_with("CO")), as.character) %>%
@@ -78,7 +75,8 @@ quantitative <- all_data %>%
   select(-NU_NOTA_MT)
 
 categorical <- all_data %>%
-  select_if(is.character)
+  select_if(is.character) %>%
+  mutate_all(as.factor)
 
 pre_quantitative <- preProcess(quantitative, method = c("center", "scale"))
 pre_categorical <- dummyVars(~., data = categorical)
@@ -105,3 +103,6 @@ x_train_dummy <- bind_cols(train_quantitative, train_categorical_dummy)
 x_test_dummy <- bind_cols(test_quantitative, test_categorical_dummy)
 
 y_train <- train$NU_NOTA_MT
+
+bc <- BoxCoxTrans(train$NU_NOTA_MT)
+y_train_bc <- predict(bc, train$NU_NOTA_MT)

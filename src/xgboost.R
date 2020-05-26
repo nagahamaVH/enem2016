@@ -1,17 +1,15 @@
+library(caret)
 library(xgboost)
-library(readr)
 
 source("./src/prepare_data.R", encoding = "UTF-8")
 
-xgb_train <- xgb.DMatrix(as.matrix(x_train_dummy), label = y_train)
+SEED <- 294
+
+xgb_train <- xgb.DMatrix(as.matrix(x_train_dummy))
 xgb_test <- xgb.DMatrix(as.matrix(x_test_dummy))
 
-default_param <- list(
-  objective = "reg:linear",
-  booster = "gbtree"
-)
-
-xgb_model <- xgb.train(data = xgb_train, params = default_param, nrounds = 180)
+set.seed(SEED)
+xgb_model <- train(x = xgb_train, y = y_train, method = "xgbLinear")
 
 y_hat <- predict(xgb_model, xgb_test)
 

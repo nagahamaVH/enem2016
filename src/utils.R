@@ -11,6 +11,14 @@ as_factor_numeric_level <- function(x){
   factor(x, labels = 1:n_levels)
 }
 
+reverse_bc <- function(z, lambda){
+  if (lambda == 0) {
+    exp(z)
+  } else{
+    (lambda * z + 1) ^ (1 / lambda) 
+  }
+}
+
 # library(arules)
 # 
 # x <- all_data$NU_NOTA_CH
