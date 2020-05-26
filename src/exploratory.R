@@ -6,8 +6,8 @@ library(ggforce)
 library(DataExplorer)
 library(caret)
 
-train <- read_csv("./data/train.csv")
-test <- read_csv("./data/test.csv")
+train <- read_csv("./data/train.csv", col_types = cols())
+test <- read_csv("./data/test.csv", col_types = cols())
 
 col_train <- names(train)
 col_test <- names(test)
@@ -21,6 +21,7 @@ train <- train %>%
   mutate(id = 1:n())
 
 plot_missing(train, missing_only = T)
+plot_missing(test, missing_only = T)
 
 # Removing redundancy of variables
 useless_vars <- c("SG_UF_RESIDENCIA", "NU_INSCRICAO")

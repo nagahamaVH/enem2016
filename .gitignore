@@ -3,3 +3,5 @@
 renv/library
 renv/python
 renv/staging
+venv
+.vscode
