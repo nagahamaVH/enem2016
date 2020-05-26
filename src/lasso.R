@@ -6,32 +6,31 @@ source("./src/prepare_data.R", encoding = "UTF-8")
 SEED <- 294
 
 x_train_mm <- model.matrix(~., x_train)
-x_test_mm <- model.matrix(~., x_test
+x_test_mm <- model.matrix(~., x_test)
+
+fit_control <- trainControl(
+  method = "repeatedcv",
+  number = 5,
+  repeats = 5)
 
 set.seed(SEED)
-lasso_model <- train(x = x_train_mm, y = y_train, method = "glmnet") 
-
-y_hat <- predict(lasso_model, x_test_mm)
-
-data_model <- tibble(
-  i = 1:length(y_train),
-  y_train, 
-  y_hat = predict(lasso_model, x_train_mm), 
-  error = y_hat - y_train,
-  error_std = error / sd(error)
+lasso_model <- train(
+  x = x_train_mm, 
+  y = y_train_bc, 
+  method = "glmnet",
+  trControl = fit_control
 )
 
-ggplot(aes(x = i, y = error_std), data = data_model) +
-  geom_point()
+fitted_lasso <- predict(lasso_model, x_train_mm) %>%
+  reverse_bc(., bc$lambda)
 
-ggplot(aes(sample = error), data = data_model) +
-  geom_qq() +
-  geom_qq_line()
+pred_lasso <- predict(lasso_model, x_test_mm) %>%
+  reverse_bc(., bc$lambda)
 
 answer <- raw_test %>%
   mutate(
     tp0 = TP_PRESENCA_CH == 0 | TP_PRESENCA_CN == 0 | TP_PRESENCA_LC == 0,
-    NU_NOTA_MT = ifelse(tp0, NA, reverse_bc(y_hat, bc$lambda))
+    NU_NOTA_MT = ifelse(tp0, NA, pred_lasso)
   ) %>%
   select(NU_INSCRICAO, NU_NOTA_MT)
 
