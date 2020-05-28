@@ -19,8 +19,7 @@ intersect_vars <- intersect(col_train, col_test) %>%
   c("NU_NOTA_MT", "TP_PRESENCA_MT")
 
 train_raw <- train_raw %>%
-  select(all_of(intersect_vars)) %>%
-  mutate(id = 1:n())
+  select(all_of(intersect_vars))
 
 plot_missing(train_raw, missing_only = T)
 plot_missing(test, missing_only = T)
@@ -89,8 +88,7 @@ ggplot(aes(x = MT_STATUS, fill = TP2), data = mt_status) +
 
 # Exploring relation between covariables and response variable ----
 quantitative <- train %>%
-  select_if(is.numeric) %>%
-  select(-id)
+  select_if(is.numeric)
 
 categorical <- train %>%
   select_if(is.character) %>%
@@ -151,12 +149,14 @@ for (i in 1:n_pages_categorical) {
 # Removing outliers and single level variables
 # Outliers: NU_NOTA_CH, NU_NOTA_CN, TP_PRESENCA_CH, TP_PRESENCA_CN
 train_no_outliers <- train %>%
-  filter(NU_NOTA_CH > 0 & NU_NOTA_CN > 0) %>%
+  mutate(
+    NU_NOTA_CH = ifelse(is.na(NU_NOTA_CH), -10, NU_NOTA_CH),
+    NU_NOTA_CN = ifelse(is.na(NU_NOTA_CN), -10, NU_NOTA_CN)
+  ) %>%
   select(-c(Q026, TP_PRESENCA_LC, IN_CEGUEIRA))
 
 quantitative <- train_no_outliers %>%
-  select_if(is.numeric) %>%
-  select(-id)
+  select_if(is.numeric)
 
 categorical <- train_no_outliers %>%
   select_if(is.character) %>%

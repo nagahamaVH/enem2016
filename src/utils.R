@@ -19,6 +19,10 @@ reverse_bc <- function(z, lambda){
   }
 }
 
+fill_missing_value <- function(x, value){
+  ifelse(is.na(x), value, x)
+}
+
 # library(arules)
 # 
 # x <- all_data$NU_NOTA_CH

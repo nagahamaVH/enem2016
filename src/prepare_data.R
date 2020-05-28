@@ -23,10 +23,7 @@ useless_vars <- c("SG_UF_RESIDENCIA", "NU_INSCRICAO", "Q026", "TP_PRESENCA_LC",
 char_var <- c("Q001", "Q002", "Q006", "Q024", "Q025", "Q026", "Q027", "Q047")
 
 train <- train %>%
-  filter(NU_NOTA_MT > 0 & !is.na(NU_NOTA_MT)) %>%
-  filter(NU_NOTA_CH > 0 | NU_NOTA_CN > 0) # outliers
-
-train <- train %>%
+  filter(NU_NOTA_MT > 0) %>%
   mutate_at(vars(starts_with("IN")), as.character) %>%
   mutate_at(vars(starts_with("TP")), as.character) %>%
   mutate_at(vars(starts_with("CO")), as.character) %>%
@@ -41,29 +38,19 @@ test <- raw_test %>%
   mutate_at(char_var, as.character) %>%
   select(-all_of(useless_vars))
 
-all_data <- bind_rows(train, test)
-
-n_train <- nrow(train)
-n_test <- nrow(test)
-
-# Discretize variables ----
-discretize_vars <- c(
+fill_nota_vars <- c(
   "NU_NOTA_CH", "NU_NOTA_CN", "NU_NOTA_REDACAO", "NU_NOTA_COMP5", 
   "NU_NOTA_COMP4", "NU_NOTA_COMP3", "NU_NOTA_COMP2", "NU_NOTA_COMP1", 
   "NU_NOTA_LC")
 
-discretize_data <- all_data %>%
-  select(all_of(discretize_vars))
+all_data <- bind_rows(train, test) %>%
+  mutate_at(fill_nota_vars, .funs = fill_missing_value, value = 0)
 
-all_data <- all_data %>%
-  select(-all_of(discretize_vars))
-
-data_discretize <- discretizeDF(discretize_data, methods = list("cluster"))
-
-all_data <- bind_cols(all_data, data_discretize)
+n_train <- nrow(train)
+n_test <- nrow(test)
 
 # Data imputation ----
-inpute_vars <- c(discretize_vars, "Q027", "TP_DEPENDENCIA_ADM_ESC", "TP_ENSINO",
+inpute_vars <- c("Q027", "TP_DEPENDENCIA_ADM_ESC", "TP_ENSINO", 
                  "TP_STATUS_REDACAO")
 
 all_data <- all_data %>%
