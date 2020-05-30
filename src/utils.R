@@ -23,17 +23,18 @@ fill_missing_value <- function(x, value){
   ifelse(is.na(x), value, x)
 }
 
-# library(arules)
-# 
-# x <- all_data$NU_NOTA_CH
-# y <- all_data$NU_NOTA_MT
-# 
-# parms <- expand.grid(
-#   method = c("interval", "frequency", "cluster"),
-#   breaks = c(3, 5, 7, 9, 11, )
-# )
-# 
-# xgb_discretize <- function(x, y, parms, iter){
-#   discretize(x, method = parms)
-# 
-# }
+select_vars_multiple_levels <- function(data){
+  data_levels <- sapply(data, levels)
+  
+  selected_vars <- NULL
+  
+  for (i in 1:length(data_levels)) {
+    add_i <- ifelse(length(data_levels[[i]]) > 1, names(data_levels[i]), NA)
+    
+    selected_vars <- c(selected_vars, add_i)
+  }
+  
+  selected_vars <- selected_vars[!is.na(selected_vars)]
+  
+  return(selected_vars)
+}

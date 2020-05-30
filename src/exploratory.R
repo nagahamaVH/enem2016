@@ -34,11 +34,15 @@ train_raw <- train_raw %>%
 ggplot(aes(x = NU_NOTA_MT), data = train_raw) +
   geom_histogram()
 
+train_raw %>%
+  count(zero_score = NU_NOTA_MT == 0)
+
 names(train_raw) %>%
   sort()
 
 char_var <- c("Q001", "Q002", "Q006", "Q024", "Q025", "Q026", "Q027", "Q047")
 
+# Removing outliers and transforming data types
 train <- train_raw %>%
   filter(NU_NOTA_MT > 0) %>%
   mutate_at(vars(starts_with("IN")), as.character) %>%
@@ -50,9 +54,7 @@ train <- train_raw %>%
 ggplot(aes(x = NU_NOTA_MT), data = train) +
   geom_histogram()
 
-# Understanding NU_NOTA_MT NA, 0 ----
-# TP_0 == 0 related with NU_NOTA_MT = NA. The student didn't make the test or
-# no show
+# Understanding NU_NOTA_MT NA, 0 and score NA for all tests ----
 mt_status <- train_raw %>%
   mutate(
     MT_STATUS = case_when(
@@ -60,21 +62,66 @@ mt_status <- train_raw %>%
       NU_NOTA_MT == 0 ~ "0",
       NU_NOTA_MT > 0 ~ ">0"
     ),
+    CH_STATUS = case_when(
+      is.na(NU_NOTA_CH) ~ "NA",
+      NU_NOTA_CH == 0 ~ "0",
+      NU_NOTA_CH > 0 ~ ">0"
+    ),
+    CN_STATUS = case_when(
+      is.na(NU_NOTA_CN) ~ "NA",
+      NU_NOTA_CN == 0 ~ "0",
+      NU_NOTA_CN > 0 ~ ">0"
+    ),
     TP0 = TP_PRESENCA_CH == 0 | TP_PRESENCA_CN == 0 | TP_PRESENCA_LC == 0,
     TP2 = TP_PRESENCA_CH == 2 | TP_PRESENCA_CN == 2 | TP_PRESENCA_LC == 2
   ) %>%
   select(MT_STATUS, TP0, TP2, TP_PRESENCA_CH, TP_PRESENCA_CN, 
-         TP_PRESENCA_LC, TP_PRESENCA_MT) %>%
+         TP_PRESENCA_LC, TP_PRESENCA_MT, CH_STATUS, CN_STATUS) %>%
   mutate_all(as.factor)
 
 ggplot(aes(x = MT_STATUS, fill = TP_PRESENCA_CN), data = mt_status) +
   geom_bar(position = "fill")
+# no score in MT are related with no show in CN test
+
+ggplot(aes(x = MT_STATUS, fill = CN_STATUS), data = mt_status) +
+  geom_bar(position = "fill")
+# no score in MT are related with no score CN test
+
+mt_status %>%
+  filter(CN_STATUS == "NA") %>%
+  count(MT_STATUS) %>%
+  mutate(
+    percent = n / sum(n) * 100
+  )
 
 ggplot(aes(x = MT_STATUS, fill = TP_PRESENCA_CH), data = mt_status) +
   geom_bar(position = "fill")
+# no score in MT are related with no show in CH test
+
+ggplot(aes(x = MT_STATUS, fill = CH_STATUS), data = mt_status) +
+  geom_bar(position = "fill")
+# no score in MT are related with no score CH test
+
+mt_status %>%
+  filter(CH_STATUS == "NA") %>%
+  count(MT_STATUS) %>%
+  mutate(
+    percent = n / sum(n) * 100
+  )
+
+mt_status %>%
+  count(CN_STATUS) %>%
+  mutate(
+    percent = n / sum(n) * 100
+  )
+
+ggplot(aes(x = MT_STATUS, fill = CH_STATUS), data = mt_status) +
+  geom_bar(position = "fill")
+# students desqualifed are those who has 0 score in test 
 
 ggplot(aes(x = MT_STATUS, fill = TP0), data = mt_status) +
   geom_bar(position = "fill")
+# no score in MT are related with no show in any of main tests (CH, CN, LC)
 
 mt_status %>%
   filter(TP0 == T) %>%
@@ -129,7 +176,7 @@ for (i in 1:n_pages_quantitative) {
     facet_wrap_paginate(~var, scales = "free", ncol = n_col_quant, 
                         nrow = n_row_quant, page = i) +
     theme_bw()
-  ggsave(paste0("./images/quant-grid-", i, ".png"), width = 10, height = 10)
+  ggsave(paste0("./images/quant-grid-raw", i, ".png"), width = 10, height = 10)
 }
 
 for (i in 1:n_pages_categorical) {
@@ -143,24 +190,23 @@ for (i in 1:n_pages_categorical) {
     facet_wrap_paginate(~var, scales = "free", ncol = n_col_cat, 
                         nrow = n_row_cat, page = i) +
     theme_bw()
-  ggsave(paste0("./images/cat-grid-", i, ".png"), width = 10, height = 10)
+  ggsave(paste0("./images/cat-grid-raw", i, ".png"), width = 10, height = 10)
 }
 
 # Removing outliers and single level variables
 # Outliers: NU_NOTA_CH, NU_NOTA_CN, TP_PRESENCA_CH, TP_PRESENCA_CN
-train_no_outliers <- train %>%
-  mutate(
-    NU_NOTA_CH = ifelse(is.na(NU_NOTA_CH), -10, NU_NOTA_CH),
-    NU_NOTA_CN = ifelse(is.na(NU_NOTA_CN), -10, NU_NOTA_CN)
-  ) %>%
-  select(-c(Q026, TP_PRESENCA_LC, IN_CEGUEIRA))
+train_clean <- train %>%
+  filter(!is.na(NU_NOTA_CH) & !is.na(NU_NOTA_CN) & 
+           NU_NOTA_CH > 0 & NU_NOTA_CN > 0) %>%
+  select(-c("IN_CEGUEIRA", "TP_PRESENCA_CH", "TP_PRESENCA_CN", 
+            "TP_PRESENCA_LC"))
 
-quantitative <- train_no_outliers %>%
+quantitative <- train_clean %>%
   select_if(is.numeric)
 
-categorical <- train_no_outliers %>%
+categorical <- train_clean %>%
   select_if(is.character) %>%
-  bind_cols(select(train_no_outliers, NU_NOTA_MT), .)
+  bind_cols(select(train_clean, NU_NOTA_MT), .)
 
 quantitative_pivot <- quantitative %>%
   pivot_longer(-NU_NOTA_MT, names_to = "var", values_to = "value") %>%
@@ -190,7 +236,7 @@ for (i in 1:n_pages_quantitative) {
     facet_wrap_paginate(~var, scales = "free", ncol = n_col_quant, 
                         nrow = n_row_quant, page = i) +
     theme_bw()
-  ggsave(paste0("./images/quant-grid-no-out-", i, ".png"), width = 10, height = 10)
+  ggsave(paste0("./images/quant-grid", i, ".png"), width = 10, height = 10)
 }
 
 for (i in 1:n_pages_categorical) {
@@ -204,5 +250,5 @@ for (i in 1:n_pages_categorical) {
     facet_wrap_paginate(~var, scales = "free", ncol = n_col_cat, 
                         nrow = n_row_cat, page = i) +
     theme_bw()
-  ggsave(paste0("./images/cat-grid-no-out-", i, ".png"), width = 10, height = 10)
+  ggsave(paste0("./images/cat-grid", i, ".png"), width = 10, height = 10)
 }
