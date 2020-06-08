@@ -3,6 +3,7 @@ library(tidyr)
 library(readr)
 library(ggplot2)
 library(ggforce)
+library(gridExtra)
 library(DataExplorer)
 library(caret)
 
@@ -21,8 +22,19 @@ intersect_vars <- intersect(col_train, col_test) %>%
 train_raw <- train_raw %>%
   select(all_of(intersect_vars))
 
-plot_missing(train_raw, missing_only = T)
-plot_missing(test, missing_only = T)
+missing_train <- plot_missing(train_raw, missing_only = T) +
+  labs(y = "Linhas faltantes", x = "Variáveis", title = "Treino") +
+  theme_gray() + 
+  theme(legend.position = "none")
+
+missing_test <- plot_missing(test, missing_only = T) +
+  labs(y = "Linhas faltantes", x = "Variáveis", title = "Teste") +
+  theme_gray() +
+  theme(legend.position = "none")
+
+plot_missing <- grid.arrange(missing_train, missing_test, nrow = 2)
+ggsave("./images/missing-data.png", plot = plot_missing, units = 'cm', 
+       width = 26, height = 18)
 
 # Removing useless variables
 useless_vars <- c("SG_UF_RESIDENCIA", "NU_INSCRICAO")
