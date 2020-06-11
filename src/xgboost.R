@@ -22,6 +22,19 @@ xgb_model <- train(
   trControl = fit_control
 )
 
+vars <- colnames(x_train_dummy)
+all_vars <- tibble(id = 1:length(vars), var = vars)
+
+var_imp <- varImp(xgb_model, scale = F)
+imp_data <- tibble(
+  id = 1:nrow(var_imp$importance), 
+  value = var_imp$importance$Overall
+)
+
+imp_data <- left_join(imp_data, all_vars, by = "id")
+
+
+
 fitted_xgb <- predict(xgb_model, xgb_train)
 
 pred_xgb <- predict(xgb_model, xgb_test)

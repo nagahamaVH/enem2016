@@ -38,3 +38,12 @@ select_vars_multiple_levels <- function(data){
   
   return(selected_vars)
 }
+
+decode_tp_presenca <- function(x){
+  case_when(
+    x == 0 ~ "Faltou",
+    x == 1 ~ "Presente",
+    x == 2 ~ "Eliminado"
+  )
+}
+

@@ -4,8 +4,11 @@ library(readr)
 library(ggplot2)
 library(ggforce)
 library(gridExtra)
+library(cowplot)
 library(DataExplorer)
 library(caret)
+
+source("./src/utils.R", encoding = "UTF-8")
 
 train_raw <- read_csv("./data/train.csv", col_types = cols())
 
@@ -23,19 +26,21 @@ train_raw <- train_raw %>%
   select(all_of(intersect_vars))
 
 missing_train <- plot_missing(train_raw, missing_only = T) +
-  labs(y = "Linhas faltantes", x = "Variáveis", title = "Treino") +
-  theme_gray() + 
-  theme(legend.position = "none")
-
-missing_test <- plot_missing(test, missing_only = T) +
-  labs(y = "Linhas faltantes", x = "Variáveis", title = "Teste") +
+  labs(y = "", x = "", title = "Treino") +
   theme_gray() +
   theme(legend.position = "none")
 
-plot_missing <- grid.arrange(missing_train, missing_test, nrow = 2)
+missing_test <- plot_missing(test, missing_only = T) +
+  labs(y = "", x = "", title = "Teste") +
+  theme_gray() +
+  theme(legend.position = "none")
+
+plot_missing <- plot_grid(missing_train, missing_test, nrow = 2) +
+  draw_label("Variáveis", x = 0, y = 0.5, vjust = 1.2, angle = 90, size = 12) +
+  draw_label("Linhas faltantes", x = 0.5, y = 0, vjust = -0.5, size = 12)
 ggsave("./images/missing-data.png", plot = plot_missing, units = 'cm', 
        width = 26, height = 18)
-
+  
 # Removing useless variables
 useless_vars <- c("SG_UF_RESIDENCIA", "NU_INSCRICAO")
 
@@ -70,80 +75,116 @@ ggplot(aes(x = NU_NOTA_MT), data = train) +
 mt_status <- train_raw %>%
   mutate(
     MT_STATUS = case_when(
-      is.na(NU_NOTA_MT) ~ "NA",
+      is.na(NU_NOTA_MT) ~ "Missing",
       NU_NOTA_MT == 0 ~ "0",
       NU_NOTA_MT > 0 ~ ">0"
     ),
     CH_STATUS = case_when(
-      is.na(NU_NOTA_CH) ~ "NA",
+      is.na(NU_NOTA_CH) ~ "Missing",
       NU_NOTA_CH == 0 ~ "0",
       NU_NOTA_CH > 0 ~ ">0"
     ),
     CN_STATUS = case_when(
-      is.na(NU_NOTA_CN) ~ "NA",
+      is.na(NU_NOTA_CN) ~ "Missing",
       NU_NOTA_CN == 0 ~ "0",
       NU_NOTA_CN > 0 ~ ">0"
     ),
-    TP0 = TP_PRESENCA_CH == 0 | TP_PRESENCA_CN == 0 | TP_PRESENCA_LC == 0,
-    TP2 = TP_PRESENCA_CH == 2 | TP_PRESENCA_CN == 2 | TP_PRESENCA_LC == 2
+    LC_STATUS = case_when(
+      is.na(NU_NOTA_LC) ~ "Missing",
+      NU_NOTA_LC == 0 ~ "0",
+      NU_NOTA_LC > 0 ~ ">0"
+    )
   ) %>%
-  select(MT_STATUS, TP0, TP2, TP_PRESENCA_CH, TP_PRESENCA_CN, 
-         TP_PRESENCA_LC, TP_PRESENCA_MT, CH_STATUS, CN_STATUS) %>%
+  mutate_at(c("TP_PRESENCA_CH", "TP_PRESENCA_CN", "TP_PRESENCA_LC"), 
+            decode_tp_presenca) %>%
+  select(MT_STATUS, TP_PRESENCA_CH, TP_PRESENCA_CN, 
+         TP_PRESENCA_LC, TP_PRESENCA_MT, CH_STATUS, CN_STATUS, LC_STATUS) %>%
   mutate_all(as.factor)
 
-ggplot(aes(x = MT_STATUS, fill = TP_PRESENCA_CN), data = mt_status) +
-  geom_bar(position = "fill")
-# no score in MT are related with no show in CN test
+cn_score <- ggplot(aes(x = TP_PRESENCA_CN, fill = CN_STATUS), data = mt_status) +
+  geom_bar(position = "fill") +
+  labs(x = "", y = "", fill = "Nota") +
+  guides(color = guide_legend(nrow = 1)) +
+  theme_minimal_hgrid() +
+  theme(legend.position = "bottom")
 
-ggplot(aes(x = MT_STATUS, fill = CN_STATUS), data = mt_status) +
-  geom_bar(position = "fill")
-# no score in MT are related with no score CN test
+legend_score <- get_legend(
+  cn_score #+ theme(legend.box.margin = margin(0, 0, 0, 12))
+)
 
-mt_status %>%
-  filter(CN_STATUS == "NA") %>%
-  count(MT_STATUS) %>%
-  mutate(
-    percent = n / sum(n) * 100
+cn_table <- mt_status %>%
+  count(TP_PRESENCA_CN) %>%
+  rename(
+    "Presença" = TP_PRESENCA_CN,
+    "Frequência" = n
   )
 
-ggplot(aes(x = MT_STATUS, fill = TP_PRESENCA_CH), data = mt_status) +
-  geom_bar(position = "fill")
-# no score in MT are related with no show in CH test
+ch_score <- ggplot(aes(x = TP_PRESENCA_CH, fill = CH_STATUS), data = mt_status) +
+  geom_bar(position = "fill") +
+  labs(x = "", y = "") +
+  theme_minimal_hgrid()
 
-ggplot(aes(x = MT_STATUS, fill = CH_STATUS), data = mt_status) +
-  geom_bar(position = "fill")
-# no score in MT are related with no score CH test
-
-mt_status %>%
-  filter(CH_STATUS == "NA") %>%
-  count(MT_STATUS) %>%
-  mutate(
-    percent = n / sum(n) * 100
+ch_table <- mt_status %>%
+  count(TP_PRESENCA_CH) %>%
+  rename(
+    "Presença" = TP_PRESENCA_CH,
+    "Frequência" = n
   )
 
-mt_status %>%
-  count(CN_STATUS) %>%
-  mutate(
-    percent = n / sum(n) * 100
+lc_score <- ggplot(aes(x = TP_PRESENCA_LC, fill = LC_STATUS), data = mt_status) +
+  geom_bar(position = "fill") +
+  labs(x = "", y = "") +
+  theme_minimal_hgrid()
+
+lc_table <- mt_status %>%
+  count(TP_PRESENCA_LC) %>%
+  rename(
+    "Presença" = TP_PRESENCA_LC,
+    "Frequência" = n
   )
 
-ggplot(aes(x = MT_STATUS, fill = CH_STATUS), data = mt_status) +
-  geom_bar(position = "fill")
-# students desqualifed are those who has 0 score in test 
+cn_grid <- plot_grid(
+  cn_score + theme(legend.position = "none"),
+  tableGrob(cn_table, rows = NULL),
+  rel_widths = c(1, .3)
+) +
+  draw_label("Ciências da Natureza", x = 0.5, y = 1, vjust = 1, 
+             fontface = "bold")
 
-ggplot(aes(x = MT_STATUS, fill = TP0), data = mt_status) +
-  geom_bar(position = "fill")
-# no score in MT are related with no show in any of main tests (CH, CN, LC)
+ch_grid <- plot_grid(
+  ch_score + theme(legend.position = "none"),
+  tableGrob(ch_table, rows = NULL),
+  rel_widths = c(1, .3)
+) +
+  draw_label("Ciências Humanas", x = 0.5, y = 1, vjust = 1, 
+             fontface = "bold")
 
-mt_status %>%
-  filter(TP0 == T) %>%
-  count(MT_STATUS) %>%
-  mutate(
-    percent = n / sum(n) * 100
-  )
+lc_grid <- plot_grid(
+  lc_score + theme(legend.position = "none"),
+  tableGrob(lc_table, rows = NULL),
+  rel_widths = c(1, .3)
+) +
+  draw_label("Linguagens e Códigos", x = 0.5, y = 1, vjust = 1, 
+             fontface = "bold")
 
-ggplot(aes(x = MT_STATUS, fill = TP2), data = mt_status) +
-  geom_bar(position = "fill")
+score_grid_raw <- plot_grid(
+  ch_grid,
+  cn_grid,
+  lc_grid,
+  align = "vh",
+  nrow = 3
+)
+
+score_grid <- plot_grid(
+  score_grid_raw,
+  legend_score,
+  nrow = 2,
+  rel_heights = c(1, .1)
+) +
+  draw_label("Proporção", x = 0, y = 0.5, vjust = 1.2, angle = 90, size = 12) +
+  draw_label("Presença", x = 0.5, y = 0, vjust = -0.5, size = 12)
+ggsave("./images/score-grid.png", plot = score_grid, units = 'cm', 
+       width = 26, height = 18)
 
 # Exploring relation between covariables and response variable ----
 quantitative <- train %>%
