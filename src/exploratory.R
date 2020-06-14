@@ -101,28 +101,15 @@ mt_status <- train_raw %>%
          TP_PRESENCA_LC, TP_PRESENCA_MT, CH_STATUS, CN_STATUS, LC_STATUS) %>%
   mutate_all(as.factor)
 
-cn_score <- ggplot(aes(x = TP_PRESENCA_CN, fill = CN_STATUS), data = mt_status) +
+ch_score <- ggplot(aes(x = TP_PRESENCA_CH, fill = CH_STATUS), data = mt_status) +
   geom_bar(position = "fill") +
-  labs(x = "", y = "", fill = "Nota") +
-  guides(color = guide_legend(nrow = 1)) +
+  labs(x = "", y = "", fill = "Nota", title = "Ciências Humanas") +
   theme_minimal_hgrid() +
   theme(legend.position = "bottom")
 
 legend_score <- get_legend(
-  cn_score #+ theme(legend.box.margin = margin(0, 0, 0, 12))
+  ch_score #+ theme(legend.box.margin = margin(0, 0, 0, 12))
 )
-
-cn_table <- mt_status %>%
-  count(TP_PRESENCA_CN) %>%
-  rename(
-    "Presença" = TP_PRESENCA_CN,
-    "Frequência" = n
-  )
-
-ch_score <- ggplot(aes(x = TP_PRESENCA_CH, fill = CH_STATUS), data = mt_status) +
-  geom_bar(position = "fill") +
-  labs(x = "", y = "") +
-  theme_minimal_hgrid()
 
 ch_table <- mt_status %>%
   count(TP_PRESENCA_CH) %>%
@@ -131,9 +118,21 @@ ch_table <- mt_status %>%
     "Frequência" = n
   )
 
+cn_score <- ggplot(aes(x = TP_PRESENCA_CN, fill = CN_STATUS), data = mt_status) +
+  geom_bar(position = "fill") +
+  labs(x = "", y = "", fill = "", title = "Ciências Naturais") +
+  theme_minimal_hgrid()
+
+cn_table <- mt_status %>%
+  count(TP_PRESENCA_CN) %>%
+  rename(
+    "Presença" = TP_PRESENCA_CN,
+    "Frequência" = n
+  )
+
 lc_score <- ggplot(aes(x = TP_PRESENCA_LC, fill = LC_STATUS), data = mt_status) +
   geom_bar(position = "fill") +
-  labs(x = "", y = "") +
+  labs(x = "", y = "", title = "Linguagens e Códigos") +
   theme_minimal_hgrid()
 
 lc_table <- mt_status %>%
@@ -147,25 +146,19 @@ cn_grid <- plot_grid(
   cn_score + theme(legend.position = "none"),
   tableGrob(cn_table, rows = NULL),
   rel_widths = c(1, .3)
-) +
-  draw_label("Ciências da Natureza", x = 0.5, y = 1, vjust = 1, 
-             fontface = "bold")
+)
 
 ch_grid <- plot_grid(
   ch_score + theme(legend.position = "none"),
   tableGrob(ch_table, rows = NULL),
   rel_widths = c(1, .3)
-) +
-  draw_label("Ciências Humanas", x = 0.5, y = 1, vjust = 1, 
-             fontface = "bold")
+)
 
 lc_grid <- plot_grid(
   lc_score + theme(legend.position = "none"),
   tableGrob(lc_table, rows = NULL),
   rel_widths = c(1, .3)
-) +
-  draw_label("Linguagens e Códigos", x = 0.5, y = 1, vjust = 1, 
-             fontface = "bold")
+)
 
 score_grid_raw <- plot_grid(
   ch_grid,
@@ -184,6 +177,47 @@ score_grid <- plot_grid(
   draw_label("Proporção", x = 0, y = 0.5, vjust = 1.2, angle = 90, size = 12) +
   draw_label("Presença", x = 0.5, y = 0, vjust = -0.5, size = 12)
 ggsave("./images/score-grid.png", plot = score_grid, units = 'cm', 
+       width = 26, height = 18)
+
+# Crossing score between MT and predictor score
+ch_cross_score <- ggplot(aes(x = MT_STATUS, fill = CH_STATUS), data = mt_status) +
+  geom_bar(position = "fill") +
+  labs(x = "", y = "", fill = "Nota", title = "Ciências Humanas") +
+  theme_minimal_hgrid() +
+  theme(legend.position = "bottom")
+
+legend_cross_score <- get_legend(
+  ch_cross_score #+ theme(legend.box.margin = margin(0, 0, 0, 12))
+)
+
+cn_cross_score <- ggplot(aes(x = MT_STATUS, fill = CN_STATUS), data = mt_status) +
+  geom_bar(position = "fill") +
+  labs(x = "", y = "", title = "Ciências Naturais") +
+  theme_minimal_hgrid()
+
+lc_cross_score <- ggplot(aes(x = MT_STATUS, fill = LC_STATUS), data = mt_status) +
+  geom_bar(position = "fill") +
+  labs(x = "", y = "", title = "Linguagens e Códigos") +
+  theme_minimal_hgrid() +
+  theme(legend.position = "none")
+
+cross_score_grid_raw <- plot_grid(
+  ch_cross_score + theme(legend.position = "none"),
+  cn_cross_score + theme(legend.position = "none"),
+  lc_cross_score + theme(legend.position = "none"),
+  align = "vh",
+  nrow = 3
+)
+
+cross_score_grid <- plot_grid(
+  cross_score_grid_raw,
+  legend_cross_score,
+  nrow = 2,
+  rel_heights = c(1, .1)
+) +
+  draw_label("Proporção", x = 0, y = 0.5, vjust = 1.2, angle = 90, size = 12) +
+  draw_label("Nota Matemática", x = 0.5, y = 0, vjust = -0.5, size = 12)
+ggsave("./images/cross-score-grid.png", plot = cross_score_grid, units = 'cm', 
        width = 26, height = 18)
 
 # Exploring relation between covariables and response variable ----
