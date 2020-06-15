@@ -86,13 +86,6 @@
       "Repository": "CRAN",
       "Hash": "274007cf21ffabcbc2e5f0bf73abcb3d"
     },
-    "arules": {
-      "Package": "arules",
-      "Version": "1.6-6",
-      "Source": "Repository",
-      "Repository": "CRAN",
-      "Hash": "fe985a1f13042671021644ec0a783d7d"
-    },
     "assertthat": {
       "Package": "assertthat",
       "Version": "0.2.1",
@@ -162,6 +155,13 @@
       "Source": "Repository",
       "Repository": "CRAN",
       "Hash": "6b436e95723d1f0e861224dd9b094dfb"
+    },
+    "cowplot": {
+      "Package": "cowplot",
+      "Version": "1.0.0",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Hash": "82bae0172ae9d4c4f88a440ad01f73bb"
     },
     "crayon": {
       "Package": "crayon",
@@ -380,13 +380,6 @@
       "Repository": "CRAN",
       "Hash": "e9a046d514942f36bf8ae2a5e3ded35f"
     },
-    "lazyeval": {
-      "Package": "lazyeval",
-      "Version": "0.2.2",
-      "Source": "Repository",
-      "Repository": "CRAN",
-      "Hash": "d908914ae53b04d4c0c0fd72ecc35370"
-    },
     "lifecycle": {
       "Package": "lifecycle",
       "Version": "0.2.0",
@@ -548,13 +541,6 @@
       "Repository": "CRAN",
       "Hash": "c243bf70db3a6631a0c8783152fb7db9"
     },
-    "progress": {
-      "Package": "progress",
-      "Version": "1.2.2",
-      "Source": "Repository",
-      "Repository": "CRAN",
-      "Hash": "14dc9f7a3c91ebb14ec5bb9208a07061"
-    },
     "ps": {
       "Package": "ps",
       "Version": "1.3.3",
@@ -582,13 +568,6 @@
       "Source": "Repository",
       "Repository": "CRAN",
       "Hash": "332b6f1a6fc9b165b419b3638d4fdadb"
-    },
-    "registry": {
-      "Package": "registry",
-      "Version": "0.5-1",
-      "Source": "Repository",
-      "Repository": "CRAN",
-      "Hash": "1c9935f4f14c6c096c9c9072ddee59f1"
     },
     "renv": {
       "Package": "renv",
@@ -652,13 +631,6 @@
       "Source": "Repository",
       "Repository": "CRAN",
       "Hash": "ef692f72a633981cad0d4950a5775702"
-    },
-    "slam": {
-      "Package": "slam",
-      "Version": "0.1-47",
-      "Source": "Repository",
-      "Repository": "CRAN",
-      "Hash": "73c92e0f6f2a29786505152040c35825"
     },
     "stringi": {
       "Package": "stringi",
