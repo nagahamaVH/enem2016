@@ -37,7 +37,8 @@ missing_test <- plot_missing(test, missing_only = T) +
 
 plot_missing <- plot_grid(missing_train, missing_test, nrow = 2) +
   draw_label("Variáveis", x = 0, y = 0.5, vjust = 1.2, angle = 90, size = 12) +
-  draw_label("Linhas faltantes", x = 0.5, y = 0, vjust = -0.5, size = 12)
+  draw_label("Número de observações faltantes", x = 0.5, y = 0, 
+             vjust = -0.5, size = 12)
 ggsave("./images/missing-data.png", plot = plot_missing, units = 'cm', 
        width = 26, height = 18)
   
