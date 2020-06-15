@@ -181,9 +181,9 @@ ggsave("./images/score-grid.png", plot = score_grid, units = 'cm',
        width = 26, height = 18)
 
 # Crossing score between MT and predictor score
-ch_cross_score <- ggplot(aes(x = MT_STATUS, fill = CH_STATUS), data = mt_status) +
+ch_cross_score <- ggplot(aes(x = CH_STATUS, fill = MT_STATUS), data = mt_status) +
   geom_bar(position = "fill") +
-  labs(x = "", y = "", fill = "Nota", title = "Ciências Humanas") +
+  labs(x = "", y = "", fill = "Nota Matemática", title = "Ciências Humanas") +
   theme_minimal_hgrid() +
   theme(legend.position = "bottom")
 
@@ -191,12 +191,12 @@ legend_cross_score <- get_legend(
   ch_cross_score #+ theme(legend.box.margin = margin(0, 0, 0, 12))
 )
 
-cn_cross_score <- ggplot(aes(x = MT_STATUS, fill = CN_STATUS), data = mt_status) +
+cn_cross_score <- ggplot(aes(x = CN_STATUS, fill = MT_STATUS), data = mt_status) +
   geom_bar(position = "fill") +
   labs(x = "", y = "", title = "Ciências Naturais") +
   theme_minimal_hgrid()
 
-lc_cross_score <- ggplot(aes(x = MT_STATUS, fill = LC_STATUS), data = mt_status) +
+lc_cross_score <- ggplot(aes(x = LC_STATUS, fill = MT_STATUS), data = mt_status) +
   geom_bar(position = "fill") +
   labs(x = "", y = "", title = "Linguagens e Códigos") +
   theme_minimal_hgrid() +
@@ -217,7 +217,7 @@ cross_score_grid <- plot_grid(
   rel_heights = c(1, .1)
 ) +
   draw_label("Proporção", x = 0, y = 0.5, vjust = 1.2, angle = 90, size = 12) +
-  draw_label("Nota Matemática", x = 0.5, y = 0, vjust = -0.5, size = 12)
+  draw_label("Nota", x = 0.5, y = 0, vjust = -0.5, size = 12)
 ggsave("./images/cross-score-grid.png", plot = cross_score_grid, units = 'cm', 
        width = 26, height = 18)
 
