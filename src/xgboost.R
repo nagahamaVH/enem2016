@@ -26,11 +26,20 @@ fitted_xgb <- predict(xgb_model, xgb_train)
 
 pred_xgb <- predict(xgb_model, xgb_test)
 
-answer <- raw_test %>%
+pred_xgb <- test_id %>%
+  filter(TO_PREDICT) %>%
   mutate(
-    tp0 = TP_PRESENCA_CH == 0 | TP_PRESENCA_CN == 0 | TP_PRESENCA_LC == 0,
-    NU_NOTA_MT = ifelse(tp0, NA, pred_xgb)
+    NU_NOTA_MT = pred_xgb
   ) %>%
-  select(NU_INSCRICAO, NU_NOTA_MT)
+  select(-TO_PREDICT)
+
+filled_data <- test_id %>%
+  filter(!TO_PREDICT) %>%
+  mutate(
+    NU_NOTA_MT = NA
+  ) %>%
+  select(-TO_PREDICT)
+
+answer <- bind_rows(pred_xgb, filled_data)
 
 write_csv(answer, path = "./data/xgb.csv")

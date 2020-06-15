@@ -2,16 +2,15 @@ library(dplyr)
 library(tidyr)
 library(readr)
 library(caret)
-library(arules)
 source("./src/utils.R", encoding = "UTF-8")
 
-train <- read_csv("./data/train.csv", col_types = cols())
+raw_train <- read_csv("./data/train.csv", col_types = cols())
 
-train_col_types <- spec(train)
+train_col_types <- spec(raw_train)
 
 raw_test <- read_csv("./data/test.csv", col_types = train_col_types)
 
-col_train <- names(train)
+col_train <- names(raw_train)
 col_test <- names(raw_test)
 
 intersect_vars <- intersect(col_train, col_test) %>%
@@ -22,11 +21,8 @@ useless_vars <- c("SG_UF_RESIDENCIA", "NU_INSCRICAO", "Q026", "TP_PRESENCA_LC",
 
 char_var <- c("Q001", "Q002", "Q006", "Q024", "Q025", "Q026", "Q027", "Q047")
 
-train <- train %>%
-  filter(NU_NOTA_MT > 0 & !is.na(NU_NOTA_MT)) %>%
-  filter(NU_NOTA_CH > 0 | NU_NOTA_CN > 0) # outliers
-
-train <- train %>%
+train <- raw_train %>%
+  filter(NU_NOTA_MT > 0 & !is.na(NU_NOTA_CH) & !is.na(NU_NOTA_CN)) %>%
   mutate_at(vars(starts_with("IN")), as.character) %>%
   mutate_at(vars(starts_with("TP")), as.character) %>%
   mutate_at(vars(starts_with("CO")), as.character) %>%
@@ -35,36 +31,32 @@ train <- train %>%
   select(-all_of(useless_vars))
 
 test <- raw_test %>%
+  filter(!is.na(NU_NOTA_CH) & !is.na(NU_NOTA_CN) & !is.na(NU_NOTA_REDACAO) &
+           !is.na(NU_NOTA_REDACAO)) %>%
   mutate_at(vars(starts_with("IN")), as.character) %>%
   mutate_at(vars(starts_with("TP")), as.character) %>%
   mutate_at(vars(starts_with("CO")), as.character) %>%
   mutate_at(char_var, as.character) %>%
   select(-all_of(useless_vars))
 
-all_data <- bind_rows(train, test)
+test_id <- raw_test %>%
+  mutate(
+    TO_PREDICT = ifelse(
+      !is.na(NU_NOTA_CH) & !is.na(NU_NOTA_CN) & !is.na(NU_NOTA_REDACAO) &
+        !is.na(NU_NOTA_REDACAO),
+      T,
+      F
+    )
+  ) %>%
+  select(NU_INSCRICAO, TO_PREDICT)
 
 n_train <- nrow(train)
 n_test <- nrow(test)
 
-# Discretize variables ----
-discretize_vars <- c(
-  "NU_NOTA_CH", "NU_NOTA_CN", "NU_NOTA_REDACAO", "NU_NOTA_COMP5", 
-  "NU_NOTA_COMP4", "NU_NOTA_COMP3", "NU_NOTA_COMP2", "NU_NOTA_COMP1", 
-  "NU_NOTA_LC")
+all_data <- bind_rows(train, test)
 
-discretize_data <- all_data %>%
-  select(all_of(discretize_vars))
-
-all_data <- all_data %>%
-  select(-all_of(discretize_vars))
-
-data_discretize <- discretizeDF(discretize_data, methods = list("cluster"))
-
-all_data <- bind_cols(all_data, data_discretize)
-
-# Data imputation ----
-inpute_vars <- c(discretize_vars, "Q027", "TP_DEPENDENCIA_ADM_ESC", "TP_ENSINO",
-                 "TP_STATUS_REDACAO")
+# Data imputation for missing vars ----
+inpute_vars <- c("Q027", "TP_DEPENDENCIA_ADM_ESC", "TP_ENSINO")
 
 all_data <- all_data %>%
   mutate_at(inpute_vars, create_na_level)
@@ -76,7 +68,8 @@ quantitative <- all_data %>%
 
 categorical <- all_data %>%
   select_if(is.character) %>%
-  mutate_all(as.factor)
+  mutate_all(as.factor) %>%
+  select(select_vars_multiple_levels(.))
 
 pre_quantitative <- preProcess(quantitative, method = c("center", "scale"))
 pre_categorical <- dummyVars(~., data = categorical)
